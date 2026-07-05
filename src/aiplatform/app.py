@@ -17,6 +17,7 @@ from aiplatform.core.telemetry import configure_telemetry, shutdown_telemetry
 from aiplatform.gateway.api.router import router as gateway_router
 from aiplatform.gateway.providers.registry import build_registry
 from aiplatform.gateway.service import GatewayService
+from aiplatform.router.service import RouterService
 
 logger = structlog.stdlib.get_logger(__name__)
 
@@ -36,7 +37,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         provider = configure_telemetry(app, settings)
 
         registry = build_registry(settings.gateway)
-        app.state.gateway = GatewayService(registry)
+        router_svc = RouterService(settings.router) if settings.router.enabled else None
+        app.state.gateway = GatewayService(registry, router=router_svc)
+        app.state.router = router_svc
 
         health: HealthRegistry = app.state.health
         for llm_provider in registry.all():

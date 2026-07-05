@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-05
+
+### Added
+
+- **Intelligent Model Router** — pluggable scoring system that selects the optimal
+  `(provider, model)` pair for every inference request based on cost, latency, quality,
+  or a weighted combination of all three.
+- **Four routing strategies** — `CostStrategy`, `LatencyStrategy`, `QualityStrategy`,
+  and `BalancedStrategy`; each implements a `RoutingStrategy` Protocol and is selected
+  per-request via `RoutingContext.effective_strategy`.
+- **Virtual model aliases** — send `model: "smart"` (quality), `"fast"` (latency),
+  `"cheap"` (cost), or `"balanced"` (balanced) and the router resolves a real model
+  and provider transparently; alias is substituted before the provider call.
+- **EWMA latency tracker** — thread-safe exponentially-weighted moving average tracker
+  feeds real measured latency back into routing decisions after every successful call.
+- **Rule-based prompt classifier** — assigns `PromptComplexity` (CODE / REASONING /
+  CREATIVE / COMPLEX / SIMPLE) from message content and token count; used by
+  `QualityStrategy` to boost tag-matched models.
+- **Static model catalog** — 14-model catalog spanning OpenAI (gpt-4o, gpt-4o-mini,
+  o1, o1-mini, o3-mini), Anthropic (claude-opus-4-8, claude-sonnet-4-6, claude-haiku
+  variants), and Gemini (2.5-pro, 2.0-flash, 2.0-flash-lite, 1.5-pro); `ModelProfile`
+  provides `estimate_cost()` (Decimal arithmetic) and `fits_context()`.
+- **Policy enforcement** — `RoutingPolicy` filters candidates by allowed/denied model
+  IDs, allowed provider names, maximum input tokens, and per-request cost ceiling.
+- **Gateway integration** — `GatewayService` accepts an injected `RouterService`;
+  router candidates are tried in score order with latency feedback after each call;
+  falls back to registry-order failover when the router returns no candidates.
+- **Router configuration** — `RouterSettings` wired into `Settings.router`; all fields
+  configurable via `AIP_ROUTER__*` environment variables.
+- **Router unit tests** — catalog completeness, EWMA convergence and thread safety,
+  classifier accuracy, all four strategy comparisons, and `RouterService` policy/alias
+  integration tests.
+
 ## [0.2.0] - 2026-07-05
 
 ### Added

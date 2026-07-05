@@ -23,6 +23,9 @@ htmlcov/
 .env.*
 !.env.example
 
+# Claude Code instructions (project-local; not for version control)
+CLAUDE.md
+
 # IDE
 .idea/
 .vscode/

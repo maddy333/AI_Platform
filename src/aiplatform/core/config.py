@@ -21,6 +21,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from aiplatform import __version__
 from aiplatform.gateway.config import GatewaySettings
+from aiplatform.router.config import RouterSettings
 
 
 class Environment(StrEnum):
@@ -94,6 +95,7 @@ class Settings(BaseSettings):
     telemetry: TelemetrySettings = Field(default_factory=TelemetrySettings)
     cors: CorsSettings = Field(default_factory=CorsSettings)
     gateway: GatewaySettings = Field(default_factory=GatewaySettings)
+    router: RouterSettings = Field(default_factory=RouterSettings)
 
     @property
     def is_production(self) -> bool:
