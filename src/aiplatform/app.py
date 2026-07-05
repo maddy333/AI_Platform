@@ -14,16 +14,15 @@ from aiplatform.core.errors import register_exception_handlers
 from aiplatform.core.logging import configure_logging
 from aiplatform.core.middleware import RequestContextMiddleware, SecurityHeadersMiddleware
 from aiplatform.core.telemetry import configure_telemetry, shutdown_telemetry
+from aiplatform.gateway.api.router import router as gateway_router
+from aiplatform.gateway.providers.registry import build_registry
+from aiplatform.gateway.service import GatewayService
 
 logger = structlog.stdlib.get_logger(__name__)
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
-    """Build the ASGI application.
-
-    Accepts explicit settings for tests; falls back to the environment-derived
-    singleton when run as a service (uvicorn factory mode).
-    """
+    """Build the ASGI application."""
     settings = settings or get_settings()
     configure_logging(settings.logging)
 
@@ -35,6 +34,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             version=settings.version,
         )
         provider = configure_telemetry(app, settings)
+
+        registry = build_registry(settings.gateway)
+        app.state.gateway = GatewayService(registry)
+
+        health: HealthRegistry = app.state.health
+        for llm_provider in registry.all():
+            health.register(f"provider:{llm_provider.name}", llm_provider.health)
+
         yield
         shutdown_telemetry(provider)
         logger.info("application_shutdown")
@@ -69,4 +76,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     register_exception_handlers(app)
     app.include_router(health_router)
+    app.include_router(gateway_router)
     return app
